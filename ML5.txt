@@ -1,0 +1,161 @@
+# Code Cell
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+#Importing the required libraries.
+
+# Code Cell
+from sklearn.cluster import KMeans, k_means #For clustering
+from sklearn.decomposition import PCA #Linear Dimensionality reduction.
+
+# Code Cell
+df = pd.read_csv("sales_data_sample.csv", sep=",", encoding='Latin-1') #Loading the dataset.
+
+# Code Cell
+df.head()
+
+# Code Cell
+df.shape
+
+# Code Cell
+df.describe()
+
+# Code Cell
+df.info()
+
+# Code Cell
+df.isnull().sum()
+
+# Code Cell
+df.dtypes
+
+# Code Cell
+df_drop  = ['ADDRESSLINE1', 'ADDRESSLINE2', 'STATUS','POSTALCODE', 'CITY', 'TERRITORY', 'PHONE', 'STATE', 'CONTACTFIRSTNAME', 'CONTACTLASTNAME', 'CUSTOMERNAME', 'ORDERNUMBER']
+df = df.drop(df_drop, axis=1) #Dropping the categorical uneccessary columns along with columns having null values. Can't fill the null values are there are alot of null values.
+
+# Code Cell
+df.isnull().sum()
+
+# Code Cell
+df.dtypes
+
+# Code Cell
+# Checking the categorical columns.
+
+# Code Cell
+df['COUNTRY'].unique()
+
+# Code Cell
+df['PRODUCTLINE'].unique()
+
+# Code Cell
+df['DEALSIZE'].unique()
+
+# Code Cell
+productline = pd.get_dummies(df['PRODUCTLINE']) #Converting the categorical columns.
+Dealsize = pd.get_dummies(df['DEALSIZE'])
+
+# Code Cell
+df = pd.concat([df,productline,Dealsize], axis = 1)
+
+# Code Cell
+df_drop  = ['COUNTRY','PRODUCTLINE','DEALSIZE'] #Dropping Country too as there are alot of countries.
+df = df.drop(df_drop, axis=1)
+
+# Code Cell
+df['PRODUCTCODE'] = pd.Categorical(df['PRODUCTCODE']).codes #Converting the datatype.
+
+# Code Cell
+df.drop('ORDERDATE', axis=1, inplace=True) #Dropping the Orderdate as Month is already included.
+
+# Code Cell
+df.dtypes #All the datatypes are converted into numeric
+
+# Markdown Cell
+## Plotting the Elbow Plot to determine the number of clusters.
+
+# Code Cell
+distortions = [] # Within Cluster Sum of Squares from the centroid
+K = range(1,10)
+for k in K:
+    kmeanModel = KMeans(n_clusters=k)
+    kmeanModel.fit(df)
+    distortions.append(kmeanModel.inertia_)   #Appeding the intertia to the Distortions
+
+# Code Cell
+plt.figure(figsize=(16,8))
+plt.plot(K, distortions, 'bx-')
+plt.xlabel('k')
+plt.ylabel('Distortion')
+plt.title('The Elbow Method showing the optimal k')
+plt.show()
+
+# Code Cell
+X_train = df.values #Returns a numpy array.
+
+# Code Cell
+X_train.shape
+
+# Code Cell
+model = KMeans(n_clusters=3,random_state=2) #Number of cluster = 3
+model = model.fit(X_train) #Fitting the values to create a model.
+predictions = model.predict(X_train) #Predicting the cluster values (0,1,or 2)
+
+# Code Cell
+unique,counts = np.unique(predictions,return_counts=True)
+
+# Code Cell
+counts = counts.reshape(1,3)
+
+# Code Cell
+counts_df = pd.DataFrame(counts,columns=['Cluster1','Cluster2','Cluster3'])
+
+# Code Cell
+counts_df.head()
+
+# Code Cell
+pca = PCA(n_components=2) #Converting all the features into 2 columns to make it easy to visualize using Principal COmponent Analysis.
+
+# Code Cell
+reduced_X = pd.DataFrame(pca.fit_transform(X_train),columns=['PCA1','PCA2']) #Creating a DataFrame.
+
+# Code Cell
+reduced_X.head()
+
+# Code Cell
+#Plotting the normal Scatter Plot
+plt.figure(figsize=(14,10))
+plt.scatter(reduced_X['PCA1'],reduced_X['PCA2'])
+
+# Code Cell
+model.cluster_centers_ #Finding the centriods. (3 Centriods in total. Each Array contains a centroids for particular feature )
+
+# Code Cell
+reduced_centers = pca.transform(model.cluster_centers_) #Transforming the centroids into 3 in x and y coordinates
+
+# Code Cell
+reduced_centers
+
+# Code Cell
+plt.figure(figsize=(14,10))
+plt.scatter(reduced_X['PCA1'],reduced_X['PCA2'])
+plt.scatter(reduced_centers[:,0],reduced_centers[:,1],color='black',marker='x',s=300) #Plotting the centriods
+
+# Code Cell
+reduced_X['Clusters'] = predictions #Adding the Clusters to the reduced dataframe.
+
+# Code Cell
+reduced_X.head()
+
+# Code Cell
+#Plotting the clusters
+plt.figure(figsize=(14,10))
+#                     taking the cluster number and first column           taking the same cluster number and second column      Assigning the color
+plt.scatter(reduced_X[reduced_X['Clusters'] == 0].loc[:,'PCA1'],reduced_X[reduced_X['Clusters'] == 0].loc[:,'PCA2'],color='slateblue')
+plt.scatter(reduced_X[reduced_X['Clusters'] == 1].loc[:,'PCA1'],reduced_X[reduced_X['Clusters'] == 1].loc[:,'PCA2'],color='springgreen')
+plt.scatter(reduced_X[reduced_X['Clusters'] == 2].loc[:,'PCA1'],reduced_X[reduced_X['Clusters'] == 2].loc[:,'PCA2'],color='indigo')
+
+
+plt.scatter(reduced_centers[:,0],reduced_centers[:,1],color='black',marker='x',s=300)
+

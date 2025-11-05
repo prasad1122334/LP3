@@ -1,0 +1,162 @@
+# Code Cell
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt #Importing the libraries
+
+# Code Cell
+df = pd.read_csv("Churn_Modelling.csv")
+
+# Code Cell
+df.head()
+
+# Code Cell
+df.shape
+
+# Code Cell
+df.describe()
+
+# Code Cell
+df.isnull()
+
+# Code Cell
+df.isnull().sum()
+
+# Code Cell
+df.info()
+
+# Code Cell
+df.dtypes
+
+# Code Cell
+df.columns
+
+# Code Cell
+df = df.drop(['RowNumber', 'Surname', 'CustomerId'], axis= 1) #Dropping the unnecessary columns
+
+# Code Cell
+df.head()
+
+# Code Cell
+def visualization(x, y, xlabel):
+    plt.figure(figsize=(10,5))
+    plt.hist([x, y], color=['red', 'green'], label = ['exit', 'not_exit'])
+    plt.xlabel(xlabel,fontsize=20)
+    plt.ylabel("No. of customers", fontsize=20)
+    plt.legend()
+
+# Code Cell
+df_churn_exited = df[df['Exited']==1]['Tenure']
+df_churn_not_exited = df[df['Exited']==0]['Tenure']
+
+# Code Cell
+visualization(df_churn_exited, df_churn_not_exited, "Tenure")
+
+# Code Cell
+df_churn_exited2 = df[df['Exited']==1]['Age']
+df_churn_not_exited2 = df[df['Exited']==0]['Age']
+
+# Code Cell
+visualization(df_churn_exited2, df_churn_not_exited2, "Age")
+
+# Code Cell
+X = df[['CreditScore','Gender','Age','Tenure','Balance','NumOfProducts','HasCrCard','IsActiveMember','EstimatedSalary']]
+states = pd.get_dummies(df['Geography'],drop_first = True)
+gender = pd.get_dummies(df['Gender'],drop_first = True)
+
+# Code Cell
+
+df = pd.concat([df,gender,states], axis = 1)
+
+# Code Cell
+df.head()
+
+# Code Cell
+X = df[['CreditScore','Age','Tenure','Balance','NumOfProducts','HasCrCard','IsActiveMember','EstimatedSalary','Male','Germany','Spain']]
+
+# Code Cell
+y = df['Exited']
+
+# Code Cell
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.30)
+
+# Code Cell
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+
+# Code Cell
+X_train  = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+# Code Cell
+X_train
+
+# Code Cell
+X_test
+
+# Code Cell
+import keras #Keras is the wrapper on the top of tenserflow
+#Can use Tenserflow as well but won't be able to understand the errors initially.
+
+# Code Cell
+from keras.models import Sequential #To create sequential neural network
+from keras.layers import Dense #To create hidden layers
+
+# Code Cell
+classifier = Sequential()
+
+# Code Cell
+#To add the layers
+#Dense helps to contruct the neurons
+#Input Dimension means we have 11 features
+# Units is to create the hidden layers
+#Uniform helps to distribute the weight uniformly
+classifier.add(Dense(activation = "relu",input_dim = 11,units = 6,kernel_initializer = "uniform"))
+
+# Code Cell
+classifier.add(Dense(activation = "relu",units = 6,kernel_initializer = "uniform"))   #Adding second hidden layers
+
+# Code Cell
+classifier.add(Dense(activation = "sigmoid",units = 1,kernel_initializer = "uniform")) #Final neuron will be having siigmoid function
+
+# Code Cell
+classifier.compile(optimizer="adam",loss = 'binary_crossentropy',metrics = ['accuracy']) #To compile the Artificial Neural Network. Ussed Binary crossentropy as we just have only two output
+
+# Code Cell
+classifier.summary() #3 layers created. 6 neurons in 1st,6neurons in 2nd layer and 1 neuron in last
+
+# Code Cell
+classifier.fit(X_train,y_train,batch_size=10,epochs=50) #Fitting the ANN to training dataset
+
+# Code Cell
+y_pred =classifier.predict(X_test)
+y_pred = (y_pred > 0.5) #Predicting the result
+
+# Code Cell
+from sklearn.metrics import confusion_matrix,accuracy_score,classification_report
+
+# Code Cell
+cm = confusion_matrix(y_test,y_pred)
+
+# Code Cell
+cm
+
+# Code Cell
+accuracy = accuracy_score(y_test,y_pred)
+
+# Code Cell
+accuracy
+
+# Code Cell
+plt.figure(figsize = (10,7))
+sns.heatmap(cm,annot = True)
+plt.xlabel('Predicted')
+plt.ylabel('Truth')
+
+# Code Cell
+print(classification_report(y_test,y_pred))
+
+# Code Cell
+
+
